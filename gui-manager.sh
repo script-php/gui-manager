@@ -19,6 +19,21 @@ echo "Detected OS: $OS"
 
 # Function: remove GUI
 remove_gui() {
+    # Check if running in a GUI session
+    if [[ -n "$DISPLAY" ]]; then
+        echo -e "\nWARNING: You are currently in a GUI session!"
+        echo -e "To avoid a black screen, switch to a text console FIRST:"
+        echo -e "1. Press Ctrl+Alt+F2 (or F3/F4) to open a TTY."
+        echo -e "2. Log in and rerun this script there.\n"
+        read -p "Continue anyway (not recommended)? (y/n): " confirm
+        if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+            echo "Aborting GUI removal."
+            return
+        fi
+        echo "Forcing switch to TTY1 (may cause brief black screen)..."
+        sudo chvt 1  # Switch to TTY1 (fallback)
+    fi
+
     echo "Stopping display manager..."
     if systemctl list-unit-files | grep -q gdm3; then
         sudo systemctl stop gdm3
@@ -91,8 +106,30 @@ restore_minimal_lxqt() {
 # Function: GUI on demand
 gui_on_demand() {
     restore_minimal_xfce
+    sudo systemctl disable lightdm  # Disable automatic start
     sudo systemctl set-default multi-user.target
-    echo "GUI will only start manually with: sudo systemctl start lightdm"
+    echo ""
+    echo "GUI installed but set to start only on demand."
+    echo "To start GUI temporarily, use:"
+    echo "   sudo systemctl start lightdm"
+    echo ""
+    echo "To stop GUI and return to console:"
+    echo "   sudo systemctl stop lightdm"
+    echo ""
+    echo "To make GUI start automatically at boot again:"
+    echo "   sudo systemctl enable lightdm"
+    echo "   sudo systemctl set-default graphical.target"
+}
+
+# Function: Reboot system
+reboot_system() {
+    read -p "Are you sure you want to reboot now? (y/n): " confirm
+    if [[ "$confirm" == "y" || "$confirm" == "Y" ]]; then
+        echo "Rebooting system..."
+        sudo reboot
+    else
+        echo "Reboot cancelled."
+    fi
 }
 
 # Menu
@@ -104,7 +141,8 @@ while true; do
     echo "3) Restore minimal Xfce"
     echo "4) Restore minimal LXQt"
     echo "5) Install GUI-on-demand mode"
-    echo "6) Exit"
+    echo "6) Reboot System"
+    echo "7) Exit"
     read -p "Select an option: " choice
     case $choice in
         1) remove_gui ;;
@@ -112,7 +150,8 @@ while true; do
         3) restore_minimal_xfce ;;
         4) restore_minimal_lxqt ;;
         5) gui_on_demand ;;
-        6) exit 0 ;;
+        6) reboot_system ;;
+        7) exit 0 ;;
         *) echo "Invalid choice, try again." ;;
     esac
 done
