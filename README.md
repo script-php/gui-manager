@@ -26,15 +26,9 @@ Supports full GUI removal, restoring default desktops, minimal desktops, and GUI
 
 ---
 
-## Installation & Usage
+## Usage
 
-### Run directly from GitHub
-
-```bash
-curl -sL https://raw.githubusercontent.com/script-php/gui-manager/main/gui-manager.sh | bash
-````
-
-### Or download and run manually
+### Download and run
 
 ```bash
 wget https://raw.githubusercontent.com/script-php/gui-manager/main/gui-manager.sh
