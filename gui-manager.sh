@@ -19,43 +19,51 @@ echo "Detected OS: $OS"
 
 # Function: remove GUI
 remove_gui() {
-    # Check if running in a GUI session
+    # Check if running in GUI
     if [[ -n "$DISPLAY" ]]; then
-        echo -e "\nWARNING: You are currently in a GUI session!"
-        echo -e "To avoid a black screen, switch to a text console FIRST:"
-        echo -e "1. Press Ctrl+Alt+F2 (or F3/F4) to open a TTY."
-        echo -e "2. Log in and rerun this script there.\n"
-        read -p "Continue anyway (not recommended)? (y/n): " confirm
+        echo -e "\nWARNING: Run this from a text console (Ctrl+Alt+F1/F2) for safety!"
+        read -p "Continue anyway (may cause black screen)? (y/n): " confirm
         if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-            echo "Aborting GUI removal."
+            echo "Aborted."
             return
         fi
-        echo "Forcing switch to TTY1 (may cause brief black screen)..."
-        sudo chvt 1  # Switch to TTY1 (fallback)
     fi
 
-    echo "Stopping display manager..."
-    if systemctl list-unit-files | grep -q gdm3; then
-        sudo systemctl stop gdm3
-        sudo systemctl disable gdm3
-    elif systemctl list-unit-files | grep -q lightdm; then
-        sudo systemctl stop lightdm
-        sudo systemctl disable lightdm
-    elif systemctl list-unit-files | grep -q sddm; then
-        sudo systemctl stop sddm
-        sudo systemctl disable sddm
+    echo -e "\n>>> Preparing system for GUI removal..."
+    
+    # 1. Switch to text mode explicitly
+    sudo systemctl isolate multi-user.target 2>/dev/null || true
+    
+    # 2. Stop display managers aggressively
+    echo "Stopping all display managers..."
+    sudo pkill -9 gdm3 lightdm sddm 2>/dev/null || true
+    sudo systemctl stop gdm3 lightdm sddm 2>/dev/null || true
+    
+    # 3. Disable KMS if NVIDIA/AMD GPU is detected
+    if lspci | grep -qi "nvidia\|amd"; then
+        echo "Disabling kernel modesetting (KMS) temporarily..."
+        sudo bash -c 'echo "nomodeset" > /etc/default/grub.d/nomodeset.cfg'
+        sudo update-grub
     fi
-
-    echo "Removing desktop environment..."
+    
+    # 4. Remove GUI packages
+    echo -e "\n>>> Removing desktop environment..."
     if [ "$OS" == "Ubuntu" ]; then
-        sudo apt purge -y ubuntu-desktop kubuntu-desktop xubuntu-desktop ubuntu-mate-desktop gnome-shell kde-plasma-desktop xfce4* mate* lxqt* xorg* xserver-xorg* x11-common libx11* libwayland*
+        sudo apt purge -y ubuntu-desktop kubuntu-desktop xubuntu-desktop gnome-shell xorg* libwayland*
     elif [ "$OS" == "Mint" ]; then
-        sudo apt purge -y cinnamon* nemo* mint-meta-cinnamon mate* mint-meta-mate xfce4* mint-meta-xfce lightdm slick-greeter xorg* xserver-xorg* x11-common libx11* libwayland*
+        sudo apt purge -y cinnamon* mint-meta-cinnamon xorg* lightdm
     fi
+    
     sudo apt autoremove --purge -y
     sudo apt clean
+    
+    # 5. Ensure system boots to CLI
     sudo systemctl set-default multi-user.target
-    echo "GUI removed. System will now boot in CLI mode."
+    
+    echo -e "\nGUI removed successfully!"
+    echo -e "If the screen is black, try:"
+    echo -e "1. Press Ctrl+Alt+F1 to force TTY."
+    echo -e "2. Wait 30 seconds, then reboot with: sudo reboot"
 }
 
 # Function: restore full GUI
