@@ -31,13 +31,13 @@ Supports full GUI removal, restoring default desktops, minimal desktops, and GUI
 ### Run directly from GitHub
 
 ```bash
-curl -sL https://raw.githubusercontent.com/script-php/gui-manager/gui-manager.sh | bash
+curl -sL https://raw.githubusercontent.com/script-php/gui-manager/main/gui-manager.sh | bash
 ````
 
 ### Or download and run manually
 
 ```bash
-wget https://raw.githubusercontent.com/script-php/gui-manager/gui-manager.sh
+wget https://raw.githubusercontent.com/script-php/gui-manager/main/gui-manager.sh
 chmod +x gui-manager.sh
 ./gui-manager.sh
 ```
