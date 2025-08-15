@@ -72,7 +72,31 @@ remove_gui() {
     sudo reboot
 }
 
-# [Rest of the script remains the same...]
+install_gui() {
+    case $1 in
+        "ubuntu") sudo apt install -y ubuntu-desktop gdm3 ;;
+        "mint-cinnamon") sudo apt install -y mint-meta-cinnamon lightdm slick-greeter ;;
+        "mint-mate") sudo apt install -y mint-meta-mate lightdm slick-greeter ;;
+        "mint-xfce") sudo apt install -y mint-meta-xfce lightdm slick-greeter ;;
+        "xfce-minimal") sudo apt install -y --no-install-recommends xfce4 lightdm ;;
+        "lxqt-minimal") sudo apt install -y --no-install-recommends lxqt-core lightdm ;;
+    esac
+
+    if [[ $1 == ubuntu* ]]; then
+        sudo systemctl enable gdm3
+    else
+        sudo systemctl enable lightdm
+    fi
+    sudo systemctl set-default graphical.target
+    echo -e "${GREEN}GUI installed. Reboot to complete.${NC}"
+}
+
+gui_on_demand() {
+    install_gui "xfce-minimal"
+    sudo systemctl disable lightdm
+    sudo systemctl set-default multi-user.target
+    echo -e "${GREEN}GUI-on-demand configured. Start with:${NC} sudo systemctl start lightdm"
+}
 
 # Menu
 while true; do
